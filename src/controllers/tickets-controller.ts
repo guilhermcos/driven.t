@@ -1,23 +1,41 @@
-import { Request, Response } from 'express';
-import { createTicketRequest } from '../protocols';
-import { createTicketService, getTicketTypesService, getTicketsService } from '../services';
-import { AuthenticatedRequest } from '../middlewares';
+import { Response } from 'express';
 import httpStatus from 'http-status';
-
-export async function createTicket(req: AuthenticatedRequest, res: Response) {
-  const { ticketTypeId }: createTicketRequest = req.body;
-  const userId = req.userId;
-  const result = await createTicketService(ticketTypeId, userId);
-  res.status(httpStatus.CREATED).send(result);
-}
+import { AuthenticatedRequest } from '@/middlewares';
+import ticketService from '@/services/tickets-service';
+import { InputTicketBody } from '@/protocols';
 
 export async function getTicketTypes(req: AuthenticatedRequest, res: Response) {
-  const result = await getTicketTypesService();
-  res.status(httpStatus.OK).send(result);
+  try {
+    const ticketTypes = await ticketService.getTicketType();
+    return res.status(httpStatus.OK).send(ticketTypes);
+  } catch (e) {
+    return res.sendStatus(httpStatus.NO_CONTENT);
+  }
 }
 
 export async function getTickets(req: AuthenticatedRequest, res: Response) {
-  const userId = req.userId;
-  const result = await getTicketsService(userId);
-  res.status(httpStatus.OK).send(result);
+  const { userId } = req;
+
+  try {
+    const ticket = await ticketService.getTicketByUserId(userId);
+    return res.status(httpStatus.OK).send(ticket);
+  } catch (e) {
+    return res.sendStatus(httpStatus.NOT_FOUND);
+  }
+}
+
+export async function createTicket(req: AuthenticatedRequest, res: Response) {
+  const { userId } = req;
+  const { ticketTypeId } = req.body as InputTicketBody;
+
+  if (!ticketTypeId) {
+    return res.sendStatus(httpStatus.BAD_REQUEST);
+  }
+
+  try {
+    const ticket = await ticketService.createTicket(userId, ticketTypeId);
+    return res.status(httpStatus.CREATED).send(ticket);
+  } catch (e) {
+    return res.sendStatus(httpStatus.NOT_FOUND);
+  }
 }
