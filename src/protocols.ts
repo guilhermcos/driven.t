@@ -1,5 +1,9 @@
 import { Payment, Ticket } from '@prisma/client';
 
+export type HotelId = {
+  hotelId: string;
+};
+
 export type ApplicationError = {
   name: string;
   message: string;

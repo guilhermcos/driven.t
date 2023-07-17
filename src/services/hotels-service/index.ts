@@ -22,5 +22,22 @@ export async function getHotels(userId: number) {
   return result;
 }
 
-const hotelService = { getHotels };
+export async function getHotelById(hotelId: number, userId: number) {
+  const enrollment = await enrollmentRepository.findWithAddressByUserId(userId);
+  if (!enrollment) throw notFoundError();
+
+  const ticket = await ticketsRepository.findTicketByEnrollmentId(enrollment.id);
+  if (!ticket) throw notFoundError();
+
+  if (ticket.status !== TicketStatus.PAID || ticket.TicketType.isRemote || !ticket.TicketType.includesHotel) {
+    throw paymentRequiredError();
+  }
+
+  const result = await hotelsRepository.findHotelById(hotelId);
+  if (!result) throw notFoundError();
+
+  return result;
+}
+
+const hotelService = { getHotels, getHotelById };
 export default hotelService;
